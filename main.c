@@ -43,16 +43,19 @@ int main(void)
 		m_usb_init();
 		m_imu_init(accel_scale, gyro_scale);
 
+
 		start0(250); //start the timer at 250 0CR0B
 		interupt0(1); //enable timer interupts
 
 		m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
-		
 
-		m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
 
 
     while(1){
+
+    	m_usb_tx_string("hello");
+    	m_red(TOGGLE);
+    	m_wait(500);
 				if(_flag_recieved_IMU) {
 					int i;
 					for(i = 0; i < 9; i++) {
