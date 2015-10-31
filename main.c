@@ -42,51 +42,44 @@ int main(void)
 		m_clockdivide(0); //16MHz
 		m_usb_init();
 		m_imu_init(accel_scale, gyro_scale);
-<<<<<<< Updated upstream
 
-<<<<<<< HEAD
 		start0(250); //start the timer at 250 0CR0B
 		interupt0(1); //enable timer interupts
-=======
-=======
+
 		m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
 		
->>>>>>> Stashed changes
->>>>>>> origin/master
+
+		m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
 
 
     while(1){
 				if(_flag_recieved_IMU) {
 					int i;
 					for(i = 0; i < 9; i++) {
-						m_usb_tx_int(data[i]);
+						m_usb_tx_int(*data[i]);
 						m_usb_tx_string("\t");
 					}
 					m_usb_tx_string("\n\r");
 					_flag_recieved_IMU = 0;
 				}
 
-
-
-    	m_usb_tx_string("IMU = ");
-    	m_usb_tx_uint(ADC);
         /* insert your main loop code here */
     }
     return 0;   /* never reached */
 }
 
 
-ISR(INT2_vect){
+/*ISR(INT2_vect){
 	m_rf_read(buffer, PACKET_LENGTH);
 	m_green(TOGGLE);
-}
+}*/
 
 ISR(TIMER0_OVF_vect) {
 //code also goes here
-	int worked = m_imu_raw(data);
+	int worked = m_imu_raw(*data);
 	if(worked) {
 
-		m_green(toggle);
+		m_green(TOGGLE);
 	}
 }
 
