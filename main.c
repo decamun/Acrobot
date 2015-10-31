@@ -54,8 +54,8 @@ int main(void)
 		m_clockdivide(0); //16MHz
 		//m_usb_init();
 		int imu_worked = m_imu_init((unsigned char)accel_scale, (unsigned char)gyro_scale);
-		start0(250); //start the timer at 250 0CR0B
-		interupt0(1); //enable timer interupt
+		//start0(250); //start the timer at 250 0CR0B
+		//interupt0(1); //enable timer interupt
 		//m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
 
 		m_red(ON);
@@ -75,12 +75,19 @@ int main(void)
 			m_usb_tx_int(TCNT0);
 			m_usb_tx_string("\n\r");*/
 
+			int worked = m_imu_raw(data);
+			if(worked)
+			{
+				_flag_recieved_IMU = 1;
+				m_green(ON);
+			}
+
 			if(_flag_recieved_IMU)
 			{
 				_flag_recieved_IMU = 0;
 				PID();
-				set_direction(data[0] > 0);
-				//set_duty1(((float)data[0] / (float)18000));
+				//set_direction(data[0] > 0);
+				//set_duty1(fabs(((float)data[0] / (float)18000)));
 				m_green(OFF);
 
 				//for(i = 2; i < 3; i++)
@@ -93,6 +100,7 @@ int main(void)
     }
     return 0;   /* never reached */
 }
+
 void PID()
 {
 	float x_accel = (float)data[0];
@@ -118,7 +126,7 @@ void PID()
 
 	//output
 	set_direction(acc_sign);
-	set_duty1(abs(acc_angle/1.5708));
+	set_duty1(fabs(acc_angle/1.5708));
 }
 
 void set_direction(int direction)
@@ -152,8 +160,5 @@ ISR(TIMER0_OVF_vect)
 	}
 }
 
-ISR(ADC_vect)
-{
-//more code here
-
-}
+//ISR(ADC_vect)
+//{
