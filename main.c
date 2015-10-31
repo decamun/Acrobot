@@ -24,7 +24,7 @@
 //program flags
 int _flag_recieved_IMU = 0;
 
-int* data[9];
+int data[9];
 
 
 //unsigned char = m_imu_init(unsigned char accel_scale, unsigned char gyro_scale);
@@ -70,16 +70,16 @@ int main(void)
 
 
 ISR(INT2_vect){
-	m_rf_read(buffer, PACKET_LENGTH);
-	m_green(TOGGLE);
+	//m_rf_read(buffer, PACKET_LENGTH);
+	//m_green(TOGGLE);
 }
 
 ISR(TIMER0_OVF_vect) {
 //code also goes here
-	int worked = m_imu_raw(data);
+	int worked = m_imu_raw(*data);
 	if(worked) {
 
-		m_green(toggle);
+		m_green(TOGGLE);
 	}
 }
 
