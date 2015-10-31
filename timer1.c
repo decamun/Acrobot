@@ -2,8 +2,7 @@
 #include "timer1.h"
 
 
-
-static volatile uint16_t _max_value1 = 0;
+volatile uint16_t _max_value1 = 0;
 
 void start_pwm1(uint16_t resolution, float duty_cycle) {
   _max_value1 = resolution; //save resolution
