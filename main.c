@@ -26,6 +26,7 @@
 unsigned char buffer[PACKET_LENGTH] = {0,0,0};
 
 
+
 int main(void)
 {
 		DDRE |= 1<<6;
@@ -35,11 +36,20 @@ int main(void)
 		m_clockdivide(0); //16MHz
 		m_usb_init();
 		m_imu_init(accel_scale, gyro_scale);
+<<<<<<< Updated upstream
 
+=======
+		m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
+		
+>>>>>>> Stashed changes
 
     while(1){
 
 
+
+
+    	m_usb_tx_string("IMU = ");
+    	m_usb_tx_uint(ADC);
         /* insert your main loop code here */
     }
     return 0;   /* never reached */
