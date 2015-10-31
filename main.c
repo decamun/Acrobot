@@ -23,12 +23,8 @@
 
 //program flags
 volatile int _flag_recieved_IMU = 0;
-
-<<<<<<< HEAD
-int* data[9];
-=======
 volatile int data[9];
->>>>>>> origin/master
+
 
 
 //unsigned char = m_imu_init(unsigned char accel_scale, unsigned char gyro_scale);
@@ -55,16 +51,14 @@ int main(void)
 		m_red(ON);
 		int i = 0;
     while(1) {
-		/*m_usb_tx_string("No Data. Timer value:");
-		m_usb_tx_int(TCNT0);
-		m_usb_tx_string("\n\r");*/
+			/*m_usb_tx_string("No Data. Timer value:");
+			m_usb_tx_int(TCNT0);
+			m_usb_tx_string("\n\r");*/
 
-    	m_red(TOGGLE);
-    	m_wait(500);
 			if(_flag_recieved_IMU) {
 				_flag_recieved_IMU = 0;
 				for(i = 0; i < 9; i++) {
-					m_usb_tx_int(*data[i]);
+					m_usb_tx_int(data[i]);
 					m_usb_tx_string("\t");
 				}
 				m_usb_tx_string("\n\r");
