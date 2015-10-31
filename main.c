@@ -32,6 +32,7 @@ int* data[9];
 unsigned char buffer[PACKET_LENGTH] = {0,0,0};
 
 
+
 int main(void)
 {
 		DDRE |= 1<<6;
@@ -41,9 +42,17 @@ int main(void)
 		m_clockdivide(0); //16MHz
 		m_usb_init();
 		m_imu_init(accel_scale, gyro_scale);
+<<<<<<< Updated upstream
 
+<<<<<<< HEAD
 		start0(250); //start the timer at 250 0CR0B
 		interupt0(1); //enable timer interupts
+=======
+=======
+		m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
+		
+>>>>>>> Stashed changes
+>>>>>>> origin/master
 
 
     while(1){
@@ -57,6 +66,10 @@ int main(void)
 					_flag_recieved_IMU = 0;
 				}
 
+
+
+    	m_usb_tx_string("IMU = ");
+    	m_usb_tx_uint(ADC);
         /* insert your main loop code here */
     }
     return 0;   /* never reached */
