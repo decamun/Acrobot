@@ -24,7 +24,7 @@
 //program flags
 int _flag_recieved_IMU = 0;
 
-int* data[9];
+int data[9];
 
 
 //unsigned char = m_imu_init(unsigned char accel_scale, unsigned char gyro_scale);
@@ -38,31 +38,33 @@ int main(void)
 		DDRE |= 1<<6;
 		PORTE &= !(1<<6);
     /* insert your hardware initialization here */
-
+		m_red(OFF);
 		m_clockdivide(0); //16MHz
 		m_usb_init();
-		m_imu_init(accel_scale, gyro_scale);
+		int imu_worked = m_imu_init((unsigned char)accel_scale, (unsigned char)gyro_scale);
+		m_red(ON);
 		start0(250); //start the timer at 250 0CR0B
-		interupt0(1); //enable timer interupts
-		m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
+		interupt0(1); //enable timer interupt
+		//m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
 
 
 
-    while(1){
+
+
+    while(1) {
+				m_usb_tx_string("No Data. Timer value:");
+				m_usb_tx_int(TCNT0);
+				m_usb_tx_string("\n\r");
+
 				if(_flag_recieved_IMU) {
 					int i;
 					for(i = 0; i < 9; i++) {
-						m_usb_tx_int(*data[i]);
+						m_usb_tx_int(data[i]);
 						m_usb_tx_string("\t");
 					}
 					m_usb_tx_string("\n\r");
 					_flag_recieved_IMU = 0;
 				}
-
-
-
-    	m_usb_tx_string("IMU = ");
-    	m_usb_tx_uint(ADC);
         /* insert your main loop code here */
     }
     return 0;   /* never reached */
@@ -78,7 +80,7 @@ ISR(TIMER0_OVF_vect) {
 //code also goes here
 	int worked = m_imu_raw(*data);
 	if(worked) {
-
+		_flag_recieved_IMU = 1;
 		m_green(TOGGLE);
 	}
 }
