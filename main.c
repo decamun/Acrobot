@@ -42,17 +42,10 @@ int main(void)
 		m_clockdivide(0); //16MHz
 		m_usb_init();
 		m_imu_init(accel_scale, gyro_scale);
-<<<<<<< Updated upstream
-
-<<<<<<< HEAD
 		start0(250); //start the timer at 250 0CR0B
 		interupt0(1); //enable timer interupts
-=======
-=======
 		m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
-		
->>>>>>> Stashed changes
->>>>>>> origin/master
+
 
 
     while(1){
