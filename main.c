@@ -22,14 +22,18 @@
 #define PACKET_LENGTH 3
 
 //program flags
-int _flag_recieved_IMU = 0;
+volatile int _flag_recieved_IMU = 0;
 
+<<<<<<< HEAD
 int* data[9];
+=======
+volatile int data[9];
+>>>>>>> origin/master
 
 
 //unsigned char = m_imu_init(unsigned char accel_scale, unsigned char gyro_scale);
 
-unsigned char buffer[PACKET_LENGTH] = {0,0,0};
+//volatile unsigned char buffer[PACKET_LENGTH] = {0,0,0};
 
 
 
@@ -39,34 +43,32 @@ int main(void)
 		PORTE &= !(1<<6);
     /* insert your hardware initialization here */
 
+		m_red(OFF);
+		m_green(OFF);
 		m_clockdivide(0); //16MHz
 		m_usb_init();
-		m_imu_init(accel_scale, gyro_scale);
-
-
+		int imu_worked = m_imu_init((unsigned char)accel_scale, (unsigned char)gyro_scale);
 		start0(250); //start the timer at 250 0CR0B
-		interupt0(1); //enable timer interupts
+		interupt0(1); //enable timer interupt
+		//m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
 
-		m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
+		m_red(ON);
+		int i = 0;
+    while(1) {
+		/*m_usb_tx_string("No Data. Timer value:");
+		m_usb_tx_int(TCNT0);
+		m_usb_tx_string("\n\r");*/
 
-
-
-    while(1){
-
-    	m_usb_tx_string("hello");
     	m_red(TOGGLE);
     	m_wait(500);
-				if(_flag_recieved_IMU) {
-					int i;
-					for(i = 0; i < 9; i++) {
-						m_usb_tx_int(*data[i]);
-						m_usb_tx_string("\t");
-					}
-					m_usb_tx_string("\n\r");
-					_flag_recieved_IMU = 0;
+			if(_flag_recieved_IMU) {
+				_flag_recieved_IMU = 0;
+				for(i = 0; i < 9; i++) {
+					m_usb_tx_int(*data[i]);
+					m_usb_tx_string("\t");
 				}
-
-        /* insert your main loop code here */
+				m_usb_tx_string("\n\r");
+			}
     }
     return 0;   /* never reached */
 }
@@ -79,7 +81,7 @@ int main(void)
 
 ISR(TIMER0_OVF_vect) {
 //code also goes here
-	int worked = m_imu_raw(*data);
+	int worked = m_imu_raw(data);
 	if(worked) {
 
 		m_green(TOGGLE);
