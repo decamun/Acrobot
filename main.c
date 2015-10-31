@@ -24,7 +24,7 @@
 //program flags
 int _flag_recieved_IMU = 0;
 
-int data[9];
+int* data[9];
 
 
 //unsigned char = m_imu_init(unsigned char accel_scale, unsigned char gyro_scale);
@@ -52,7 +52,7 @@ int main(void)
 				if(_flag_recieved_IMU) {
 					int i;
 					for(i = 0; i < 9; i++) {
-						m_usb_tx_int(data[i]);
+						m_usb_tx_int(*data[i]);
 						m_usb_tx_string("\t");
 					}
 					m_usb_tx_string("\n\r");
