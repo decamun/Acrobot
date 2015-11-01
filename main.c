@@ -23,6 +23,11 @@
 #define TIMER1_RES 8000 //timer resolution -- set to 20kHz
 #define LEFT 0
 #define RIGHT 1
+//gains
+#define LPF_accel 0.05
+#define p_gain 3
+#define i_gain 0.05
+#define d_gain 15
 
 //program flags
 volatile int _flag_recieved_IMU = 0;
@@ -32,6 +37,11 @@ volatile int data[9];
 volatile float x_accel_filter = 0;
 volatile float y_accel_filter = 0;
 volatile float z_accel_filter = 0;
+volatile float acc_angle;
+volatile float prev_angle;
+volatile float PID_p = 0;
+volatile float PID_i = 0;
+volatile float PID_d = 0;
 
 void set_direction(int direction);
 void PID();
@@ -104,29 +114,48 @@ int main(void)
 void PID()
 {
 	float x_accel = (float)data[0];
-	float y_accel = (float)data[1];
+	//float y_accel = (float)data[1];
 	float z_accel = (float)data[2];
 
 	//low pass filter accelerometer values
-	x_accel_filter = x_accel;//_filter * (0.8) + x_accel * (0.2);
-	y_accel_filter = y_accel;//_filter * (0.8) + y_accel * (0.2);
-	z_accel_filter = z_accel;//_filter * (0.8) + z_accel * (0.2);
+	x_accel_filter = x_accel_filter * (1 - LPF_accel) + x_accel * (LPF_accel);
+	//y_accel_filter = y_accel_filter * (0.95) + y_accel * (0.05);
+	z_accel_filter = z_accel_filter * (1 - LPF_accel) + z_accel * (LPF_accel);
 
 	//get angle from accelorometer values
 	if(z_accel_filter == 0)
 	{
 		z_accel_filter = 0.01;
 	}
-	float acc_angle = atanf(x_accel_filter/z_accel_filter);
 
-	//eventually do more math here
+
+	prev_angle = acc_angle;
+	acc_angle = atanf(x_accel_filter/z_accel_filter);
+
+	//Proportional
+	PID_p = acc_angle * p_gain;
+
+	//Integral
+	PID_i = PID_i + acc_angle * i_gain;
+	if(PID_i > 0.3) {
+		PID_i = 0.3;
+	} else if(PID_i < -0.3) {
+		PID_i = -0.3;
+	}
+
+	//Derivitive
+	PID_d = (acc_angle - prev_angle) * d_gain;
+
+
+
+	float PID_out = PID_p + PID_i + PID_d;
 
 	//check the sign of the output
-	int acc_sign = (acc_angle > 0);
+	int PID_sign = (PID_out > 0);
 
 	//output
-	set_direction(acc_sign);
-	set_duty1(fabs(acc_angle/1.5708));
+	set_direction(PID_sign);
+	set_duty1(fabs(PID_out/1.5708));
 }
 
 void set_direction(int direction)
