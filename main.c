@@ -45,6 +45,7 @@ volatile float PID_d = 0;
 
 void set_direction(int direction);
 void PID();
+float get_acc_angle();
 
 
 //unsigned char = m_imu_init(unsigned char accel_scale, unsigned char gyro_scale);
@@ -111,29 +112,28 @@ int main(void)
     return 0;   /* never reached */
 }
 
-void PID()
-{
+float get_acc_angle() {
 	float x_accel = (float)data[0];
 	//float y_accel = (float)data[1];
 	float z_accel = (float)data[2];
-
 	//low pass filter accelerometer values
 	x_accel_filter = x_accel_filter * (1 - LPF_accel) + x_accel * (LPF_accel);
 	//y_accel_filter = y_accel_filter * (0.95) + y_accel * (0.05);
 	z_accel_filter = z_accel_filter * (1 - LPF_accel) + z_accel * (LPF_accel);
-
 	//get angle from accelorometer values
 	if(z_accel_filter == 0)
 	{
 		z_accel_filter = 0.01;
 	}
-
-
 	prev_angle = acc_angle;
 	acc_angle = atanf(x_accel_filter/z_accel_filter);
+	return acc_angle;
+}
 
+void PID()
+{
 	//Proportional
-	PID_p = acc_angle * p_gain;
+	PID_p = get_acc_angle() * p_gain;
 
 	//Integral
 	PID_i = PID_i + acc_angle * i_gain;
