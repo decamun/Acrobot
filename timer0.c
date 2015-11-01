@@ -17,10 +17,10 @@ void start0(uint8_t frequency) {
   clear(TCCR0A, COM0B1);
   clear(TCCR0A, COM0B0);
 
-  //clock prescaler /8: 010
-  clear(TCCR0B, CS02);    //0
-  set(TCCR0B, CS01);   		//1
-  clear(TCCR0B, CS00);    //0
+  //clock prescaler /1024: 101
+  set(TCCR0B, CS02);    //1
+  clear(TCCR0B, CS01);  //0
+  set(TCCR0B, CS00);    //1
 }
 
 void stop0() {

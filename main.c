@@ -6,7 +6,7 @@
 
 #include <avr/io.h>
 #include "m_general.h"
-//#include "m_usb.h"
+#include "m_usb.h"
 #include "m_bus.h"
 //#include "m_rf.h"
 #include "m_imu.h"
@@ -15,8 +15,10 @@
 //#include "ADC.h"
 #include <math.h>
 
+
+
 #define accel_scale 0
-#define gyro_scale 0
+#define gyro_scale 1
 #define CHANNEL 1
 #define RXADDRESS 0x6B
 #define PACKET_LENGTH 3
@@ -24,20 +26,25 @@
 #define LEFT 0
 #define RIGHT 1
 //gains
-#define LPF_accel 0.05
-#define p_gain 3
-#define i_gain 0.05
-#define d_gain 15
+#define LPF_accel 0.005
+#define HPF_gyro 0.995
+#define kp 10
+#define ki 0
+#define kd 0
+#define GYRO_CONSTANT 0.015259
+#define TIME_STEP 0.003968
 
 //program flags
 volatile int _flag_recieved_IMU = 0;
 
 //math values
 volatile int data[9];
+volatile float prev_angle;
 
 void set_direction(int direction);
 void PID();
 float get_acc_angle();
+float get_gyro_angle();
 
 
 //unsigned char = m_imu_init(unsigned char accel_scale, unsigned char gyro_scale);
@@ -52,17 +59,13 @@ int main(void)
 		PORTE &= !(1<<6);
     /* insert your hardware initialization here */
 
+		m_usb_init();
 		m_red(OFF);
 		m_green(OFF);
 		m_clockdivide(0); //16MHz
-		//m_usb_init();
 		int imu_worked = m_imu_init((unsigned char)accel_scale, (unsigned char)gyro_scale);
-		//start0(250); //start the timer at 250 0CR0B
-		//interupt0(1); //enable timer interupt
-		//m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
-
-		m_red(ON);
-		int i = 0;
+		start0(62); //start the timer at 250 0CR0B
+		interupt0(1); //enable timer interupt\
 
 		start_pwm1(TIMER1_RES, 0.1); // output to B6
 		set(DDRB, 0); //B0 to output, ENABLE LINE
@@ -78,27 +81,11 @@ int main(void)
 			m_usb_tx_int(TCNT0);
 			m_usb_tx_string("\n\r");*/
 
-			int worked = m_imu_raw(data);
-			if(worked)
-			{
-				_flag_recieved_IMU = 1;
-				m_green(ON);
-			}
-
 			if(_flag_recieved_IMU)
 			{
-				_flag_recieved_IMU = 0;
 				PID();
-				//set_direction(data[0] > 0);
-				//set_duty1(fabs(((float)data[0] / (float)18000)));
-				m_green(OFF);
-
-				//for(i = 2; i < 3; i++)
-				//{
-				//	m_usb_tx_int(data[i]);
-				//	m_usb_tx_string("\t");
-				//}
-				//m_usb_tx_string("\n\r");
+				_flag_recieved_IMU = 0;
+				//m_green(OFF);
 			}
     }
     return 0;   /* never reached */
@@ -108,25 +95,50 @@ float get_acc_angle()
 {
 	static float x_accel_filter = 0;
 	static float z_accel_filter = 0;
-	static float acc_angle = 0;
-	static float prev_angle = 0;
-
-	float x_accel = (float)data[0];
-	//float y_accel = (float)data[1];
+	static float angle_filter = 0;
+	float x_accel = -(float)data[0];
 	float z_accel = (float)data[2];
-	//low pass filter accelerometer values
+
 	x_accel_filter = x_accel_filter * (1 - LPF_accel) + x_accel * (LPF_accel);
-	//y_accel_filter = y_accel_filter * (0.95) + y_accel * (0.05);
 	z_accel_filter = z_accel_filter * (1 - LPF_accel) + z_accel * (LPF_accel);
-	//get angle from accelorometer values
+
 	if(z_accel_filter == 0)
 	{
 		z_accel_filter = 0.01;
 	}
 
-	prev_angle = acc_angle;
-	acc_angle = atanf(x_accel_filter/z_accel_filter);
-	return acc_angle;
+	angle_filter = atanf(x_accel_filter/z_accel_filter);
+
+	//m_usb_tx_string("\t Acc Angle: ");
+	//m_usb_tx_int((int)(atanf(x_accel/z_accel)*1000));
+	m_usb_tx_string("\t Acc Angle Filter: ");
+	m_usb_tx_int((int)(angle_filter * 1000));
+
+	return angle_filter;
+}
+
+float get_gyro_angle()
+{
+	static float gyro_filter = 0;
+	static int16_t prev_gyro = 0;
+	static int16_t gyro = 0;
+	static float gyro_rate = 0;
+	static float gyro_angle_filter = 0;
+	static float prev_gyro_angle = 0;
+	static float gyro_angle = 0;
+
+	gyro = data[4]; //y gyro
+	prev_gyro_angle = gyro_angle;
+	gyro_angle = gyro_angle + gyro * TIME_STEP * GYRO_CONSTANT;
+	gyro_angle_filter = HPF_gyro * (gyro_angle_filter + (gyro_angle - prev_gyro_angle));
+
+	m_usb_tx_string("\t Gyro Angle Filter: ");
+	m_usb_tx_int((int)(gyro_angle_filter * 3.14 * 1000 / 180));
+	//m_usb_tx_string("\t Gryro Rate:");
+	//m_usb_tx_int(gyro);
+
+
+	return gyro_angle_filter * 3.14 / 180;//gyro_angle_filter;
 }
 
 void PID()
@@ -134,20 +146,30 @@ void PID()
 	static float PID_p = 0;
 	static float PID_i = 0;
 	static float PID_d = 0;
+	static float prev_angle = 0;
+	static float angle_estimate = 0;
+
+	//save d/dt
+	m_usb_tx_string("\t Angle Estimate Combination: ");
+	m_usb_tx_int((int)(angle_estimate*1000));
+	prev_angle = angle_estimate;
+	angle_estimate = get_acc_angle() + get_gyro_angle();
+	m_usb_tx_string("\n\r");
+
 
 	//Proportional
-	PID_p = get_acc_angle() * p_gain;
+	PID_p = angle_estimate * kp;
 
 	//Integral
-	PID_i = PID_i + acc_angle * i_gain;
-	if(PID_i > 0.3) {
-		PID_i = 0.3;
-	} else if(PID_i < -0.3) {
-		PID_i = -0.3;
+	PID_i = PID_i + angle_estimate * ki;
+	if(PID_i > 1) {
+		PID_i = 1;
+	} else if(PID_i < -1) {
+		PID_i = -1;
 	}
 
 	//Derivitive
-	PID_d = (acc_angle - prev_angle) * d_gain;
+	PID_d = (angle_estimate - prev_angle) * kd;
 
 
 
@@ -155,10 +177,13 @@ void PID()
 
 	//check the sign of the output
 	int PID_sign = (PID_out > 0);
+	if(fabs(PID_out) > 1) {
+		PID_out = 1;
+	}
 
 	//output
 	set_direction(PID_sign);
-	set_duty1(fabs(PID_out/1.5708));
+	set_duty1(fabs(PID_out));
 }
 
 void set_direction(int direction)
@@ -184,9 +209,11 @@ void set_direction(int direction)
 ISR(TIMER0_OVF_vect)
 {
 //code also goes here
-	int worked = m_imu_raw(data);
-	if(worked)
-	{
+	if(_flag_recieved_IMU) {
+		m_red(ON);
+	} else {
+		m_red(OFF);
+		m_imu_raw(data);
 		_flag_recieved_IMU = 1;
 		m_green(ON);
 	}

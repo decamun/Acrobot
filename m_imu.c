@@ -12,7 +12,7 @@
 // private function prototypes
 
 unsigned char m_imu_init(unsigned char accel_scale, unsigned char gyro_scale)
-{	    
+{
     // ensure that scales are within range
     if( (accel_scale < 0) || (accel_scale > 3) ) return 0;
     if( (gyro_scale < 0) || (gyro_scale > 3) ) return 0;
@@ -22,7 +22,7 @@ unsigned char m_imu_init(unsigned char accel_scale, unsigned char gyro_scale)
 
 	// confirm device is connected
     if(m_read_register(MIMU,0x75) != 0x68) return 0;
-    
+
     // SET THE CLOCK SOURCE TO X-AXIS GYRO
     // reg: 0x68 (PWR_MGMT_1)
     // bits 0-2 control clock source
@@ -39,25 +39,25 @@ unsigned char m_imu_init(unsigned char accel_scale, unsigned char gyro_scale)
     // bits: 3-4 set +/- full-scale range
     // value: 0x00
     m_write_register(MIMU,0x1B,gyro_scale<<3); // this shouldn't be doing anything
-      
+
     // SET THE MPU INTO I2C BYPASS MODE
     // reg: 0x37 (INT_PIN_CFG)
     // bit: 1 (1=bypass, 0=normal op)
     m_write_register(MIMU,0x37,0x02); // switch the MPU into bypass mode
-    
+
     // CONFIGURE THE MAGNETOMETER
     // address: 0x1E (for the magnetometer)
     // reg: 2 (mode register)
     // val: 0 (continuous output)
     m_write_register(0x1E,2,0); // set the mag. to continuous output mode
-    
+
     // SET THE MPU TO NORMAL I2C MODE
     // reg: 0x37 (INT_PIN_CFG)
     // bit: 5 (1=master, 0=passthrough)
     m_write_register(MIMU,0x37,0);    // switch the MPU out of bypass mode
 
     // SET THE AUXILLIARY I2C SAMPLE RATE
-    // reg: 0x34 (I2C_SLC4_CTRL) 
+    // reg: 0x34 (I2C_SLC4_CTRL)
     // value: 0x1E (30 > 8000/30 = 266.6Hz)
     // reg: 0x67 (MST_DELAY_CTRL)
     // bit: 0 (1=slowed down, 0=full speed)
@@ -81,7 +81,7 @@ unsigned char m_imu_init(unsigned char accel_scale, unsigned char gyro_scale)
     // reg: 0x26 (I2C_SLV0_REG)
     // val: 3 (X high byte)
     m_write_register(MIMU,0x26,3);
-    
+
     // OTHER AUXILLIARY I2C SETTINGS
     // reg: 0x27 (I2C_SLV0_CTRL
     // bit: 0-3 (# of bytes to ingest) = 6
@@ -89,11 +89,11 @@ unsigned char m_imu_init(unsigned char accel_scale, unsigned char gyro_scale)
     //      6: swap bytes
     //      7: enable slave (1=on, 0=off)
     m_write_register(MIMU,0x27,0x96);
-    
+
     // START THE AUXILLIARY I2C PORT
     // reg: 0x6A (USER_CTRL)
     m_write_register(MIMU,0x6A,0x20); // enable master mode
-    
+
     return 1;   // SUCCESS!
 }
 
@@ -105,9 +105,9 @@ unsigned char m_imu_init(unsigned char accel_scale, unsigned char gyro_scale)
 
 unsigned char m_imu_raw(int* raw_data)
 {
-    unsigned char buffer[20]; 
+    unsigned char buffer[20];
     int i;
-    
+
     for(i=0;i<20;i++) // read 20 bytes (6 accel + 2 temp + 6 gyro + 6 mag)
     {
         buffer[i] = m_read_register(MIMU, (0x4E - i) ); // go in reverse to get L:H order
@@ -125,7 +125,7 @@ unsigned char m_imu_raw(int* raw_data)
 unsigned char m_imu_accel(int* raw_data)
 {
     int i;
-    unsigned char buffer[6];    
+    unsigned char buffer[6];
     for(i=0;i<6;i++) // read 6 bytes
     {
         buffer[i] = m_read_register(MIMU, (0x40 - i) ); // go in reverse to get L:H order
@@ -141,7 +141,7 @@ unsigned char m_imu_accel(int* raw_data)
 unsigned char m_imu_gyro(int* raw_data)
 {
     int i;
-    unsigned char buffer[6];    
+    unsigned char buffer[6];
     for(i=0;i<6;i++) // read 6 bytes
     {
         buffer[i] = m_read_register(MIMU, (0x48 - i) ); // go in reverse to get L:H order
@@ -157,7 +157,7 @@ unsigned char m_imu_gyro(int* raw_data)
 unsigned char m_imu_mag(int* raw_data)
 {
     int i;
-    unsigned char buffer[6];    
+    unsigned char buffer[6];
     for(i=0;i<6;i++) // read 6 bytes
     {
         buffer[i] = m_read_register(MIMU, (0x4E - i) ); // go in reverse to get L:H order
