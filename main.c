@@ -34,14 +34,6 @@ volatile int _flag_recieved_IMU = 0;
 
 //math values
 volatile int data[9];
-volatile float x_accel_filter = 0;
-volatile float y_accel_filter = 0;
-volatile float z_accel_filter = 0;
-volatile float acc_angle;
-volatile float prev_angle;
-volatile float PID_p = 0;
-volatile float PID_i = 0;
-volatile float PID_d = 0;
 
 void set_direction(int direction);
 void PID();
@@ -112,7 +104,13 @@ int main(void)
     return 0;   /* never reached */
 }
 
-float get_acc_angle() {
+float get_acc_angle()
+{
+	static float x_accel_filter = 0;
+	static float z_accel_filter = 0;
+	static float acc_angle = 0;
+	static float prev_angle = 0;
+
 	float x_accel = (float)data[0];
 	//float y_accel = (float)data[1];
 	float z_accel = (float)data[2];
@@ -125,6 +123,7 @@ float get_acc_angle() {
 	{
 		z_accel_filter = 0.01;
 	}
+
 	prev_angle = acc_angle;
 	acc_angle = atanf(x_accel_filter/z_accel_filter);
 	return acc_angle;
@@ -132,6 +131,10 @@ float get_acc_angle() {
 
 void PID()
 {
+	static float PID_p = 0;
+	static float PID_i = 0;
+	static float PID_d = 0;
+
 	//Proportional
 	PID_p = get_acc_angle() * p_gain;
 
