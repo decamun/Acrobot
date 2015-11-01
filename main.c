@@ -148,12 +148,13 @@ void PID()
 	static float PID_d = 0;
 	static float prev_angle = 0;
 	static float angle_estimate = 0;
+	static float angle_offset = 0;
 
 	//save d/dt
 	m_usb_tx_string("\t Angle Estimate Combination: ");
 	m_usb_tx_int((int)(angle_estimate*1000));
 	prev_angle = angle_estimate;
-	angle_estimate = get_acc_angle() + get_gyro_angle();
+	angle_estimate = get_acc_angle() + get_gyro_angle() + angle_offset;
 	m_usb_tx_string("\n\r");
 
 
@@ -180,6 +181,8 @@ void PID()
 	if(fabs(PID_out) > 1) {
 		PID_out = 1;
 	}
+
+	angle_offset = angle_offset + PID_out * 0.001;
 
 	//output
 	set_direction(PID_sign);
