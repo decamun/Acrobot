@@ -71,6 +71,7 @@ int main(void)
 		int imu_worked = m_imu_init((unsigned char)accel_scale, (unsigned char)gyro_scale);
 		start0(62); //start the timer at 250 0CR0B
 		interupt0(1); //enable timer interupt\
+		m_rf_open(CHANNEL, RXADDRESS, PACKET_LENGTH);
 
 		start_pwm1(TIMER1_RES, 0.1); // output to B6
 		set(DDRB, 0); //B0 to output, ENABLE LINE
