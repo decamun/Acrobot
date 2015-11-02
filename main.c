@@ -26,6 +26,7 @@
 #define LEFT 0
 #define RIGHT 1
 //gains
+
 #define LPF_accel 0.005
 #define HPF_gyro 0.995
 #define kp 35
@@ -36,6 +37,7 @@
 #define ANGLE_OFFSET_MAX 0.20
 #define ANGLE_OFFSET_CONSTANT 0.00//1
 #define MAX_DUTY_CYCLE 0.75
+
 
 //program flags
 volatile int _flag_recieved_IMU = 0;
@@ -83,6 +85,8 @@ int main(void)
 			/*m_usb_tx_string("No Data. Timer value:");
 			m_usb_tx_int(TCNT0);
 			m_usb_tx_string("\n\r");*/
+
+
 
 			if(_flag_recieved_IMU)
 			{
@@ -162,6 +166,7 @@ void PID()
 
 
 	//Proportional
+
 	PID_p = angle_estimate * kp;
 
 	//Integral
@@ -174,8 +179,6 @@ void PID()
 
 	//Derivitive
 	PID_d = (angle_estimate - prev_angle) * kd;
-
-
 
 	float PID_out = PID_p + PID_i + PID_d;
 
@@ -213,10 +216,11 @@ void set_direction(int direction)
 	}
 }
 
-/*ISR(INT2_vect){
+ISR(INT2_vect){
 	m_rf_read(buffer, PACKET_LENGTH);
 	m_green(TOGGLE);
-}*/
+	cont_angle = (float)buffer[1]/100;
+}
 
 ISR(TIMER0_OVF_vect)
 {
