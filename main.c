@@ -28,11 +28,14 @@
 //gains
 #define LPF_accel 0.005
 #define HPF_gyro 0.995
-#define kp 10
-#define ki 0
-#define kd 0
+#define kp 35
+#define ki 0.2
+#define kd 200
 #define GYRO_CONSTANT 0.015259
 #define TIME_STEP 0.003968
+#define ANGLE_OFFSET_MAX 0.20
+#define ANGLE_OFFSET_CONSTANT 0.00//1
+#define MAX_DUTY_CYCLE 0.75
 
 //program flags
 volatile int _flag_recieved_IMU = 0;
@@ -178,11 +181,17 @@ void PID()
 
 	//check the sign of the output
 	int PID_sign = (PID_out > 0);
-	if(fabs(PID_out) > 1) {
-		PID_out = 1;
+	if(fabs(PID_out) > MAX_DUTY_CYCLE) {
+		PID_out = MAX_DUTY_CYCLE;
 	}
 
-	angle_offset = angle_offset + PID_out * 0.001;
+	angle_offset = angle_offset + PID_out * ANGLE_OFFSET_CONSTANT;
+	if(angle_offset > ANGLE_OFFSET_MAX)
+	{
+		angle_offset = ANGLE_OFFSET_MAX;
+	} else if (angle_offset < -ANGLE_OFFSET_MAX){
+		angle_offset = -ANGLE_OFFSET_MAX;
+	}
 
 	//output
 	set_direction(PID_sign);
